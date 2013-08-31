@@ -26,12 +26,12 @@ login_screen();
 
 sub login_screen() {
 
-	my $task_statement = "Perform what Task?\nEx. create user\n";
-	my @options = ('Exit', 'Create User', 'Login', 'Print Menu', 'Print Past Orders');
+	my $task_query = "Perform what Task?\nEx. create user\n";
+	my @options = ('Exit', 'Create User', 'Login', 'Show Menu', 'Display Past Orders');
 
 	list_choices(@options);
 
-	print $task_statement;
+	print $task_query;
 	
 	while ( my $input = <> ) {	
 		chomp $input;
@@ -39,6 +39,8 @@ sub login_screen() {
 		    leave() 				when /(0|quit|exit|leave|bye)/i;
 		    create_user()	 		when /(1|(create|new) user)/i;
 		    session()		 		when /(2|(sign|log)[- ]?in)/i;
+		    show_menu()		 		when /(3|menu)/i;
+		    display_past_orders()	when /(4|orders|past)/i;
 		    default {
 		    	print "Perhaps I stuttered...\n";
 		    		list_choices(@options);
@@ -58,6 +60,14 @@ sub leave(){
 
 sub session(){
 	print "Welcome!\n"
+}
+
+sub display_past_orders(){
+	print "Here's what you've been eating.\n"
+}
+
+sub show_menu(){
+	print "I recommend you eat one of these.\n"
 }
 
 sub list_choices(\@){
