@@ -4,8 +4,9 @@ use warnings;
 use DBI();
 use Try::Tiny;
 
-my $dbh = DBI->connect(
-    "DBI:mysql:database=" . $ENV{'EATERY_DB'} . ";host=localhost",
+
+our $dsn = "DBI:mysql:database=" . $ENV{'EATERY_DB'} . ";host=localhost",
+my $dbh = DBI->connect($dsn,
     $ENV{'EATERY_USER'},
     $ENV{'EATERY_PASS'},
     {   'RaiseError' => 1,
@@ -39,6 +40,13 @@ $dbh->do(
 );
 
 # Initialize Items table
+# BIT field for Prep stations equals
+# 1st - Salad/Cold
+# 2nd - Grill/Hot
+# 3rd - Vegetable/Fry
+# 4th - Bar/Beverage
+# Cold/Hot/Bar prep would be 1011 = 11
+# Bar only would be 1000 = 8
 $dbh->do(
     "Create TABLE if not exists Items (
 	sku INT PRIMARY KEY auto_increment,
@@ -66,6 +74,7 @@ $dbh->do(
 	) ENGINE=InnoDB"
 );
 
+#Populate the Customer table
 $dbh->do(
     "INSERT INTO Customers(firstname, lastname, phone, email)
 	VALUES('Douglas', 'King', '2153339626', 'douglas\@eatery.com'),
@@ -83,18 +92,13 @@ $dbh->do(
 	"
 );
 
-# $dbh->do("UPDATE Customers
-# 	SET phone='2151987777'
-# 	WHERE email='ingrid\@hotmail.net'
-# 	");
+# Try to update an individual row
+$dbh->do("UPDATE Customers
+	SET phone='2151987777'
+	WHERE email='ingrid\@hotmail.net'
+	");
 
-# BIT field for Prep stations equals
-# 1 - Salad/Cold
-# 2 - Grill/Hot
-# 3 - Vegetable/Fry
-# 4 - Bar/Beverage
-# Cold/Hot/Bar prep would be 1011 = 11
-# Bar only would be 1000 = 8
+#Populate the Items tables
 $dbh->do(
     "INSERT INTO Items(item_name, price, gluten_free, needs_temp, prep_locations, protein)
 	VALUES('Filet', 49, 1, 1, b'0010', 'BEEF'),
@@ -172,3 +176,4 @@ try {
 catch {
     warn "Uniqueness enforced on Items";
 };
+
