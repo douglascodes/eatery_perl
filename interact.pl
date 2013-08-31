@@ -7,6 +7,7 @@ sub login_screen();
 sub create_user();
 sub leave();
 sub session();
+sub show_menu();
 sub list_choices(\@);
 
 our $dsn = "DBI:mysql:database=" . $ENV{'EATERY_DB'} . ";host=localhost";
@@ -23,6 +24,8 @@ my $schema = Steakys::Schema->connect(
 
 # my $res = $schema->resultset('Customer')->find(8);
 login_screen();
+# show_menu();
+
 
 sub login_screen() {
 
@@ -67,7 +70,11 @@ sub display_past_orders(){
 }
 
 sub show_menu(){
-	print "I recommend you eat one of these.\n"
+	print "I recommend you eat one of these.\n";
+	my $fullmenu = $schema->resultset("Steakys::Schema::Result::Item")->search;
+	while ( my $menu_item = $fullmenu->next ){
+		print ${menu_item}->item_name ."\t\t". ${menu_item}->price ."\n";
+	}
 }
 
 sub list_choices(\@){
@@ -76,6 +83,7 @@ sub list_choices(\@){
 		print "$_.\t ${$array}[$_]\n"
 	}
 }
+
 
 
 1;
