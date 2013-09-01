@@ -19,8 +19,8 @@ has 'expression'    => (
 
 sub _build_expression() {
     my $self = shift;
-	$self->title() =~ s/ +/|/rg ;
-};
+    $self->title() =~ s/ +/[\\s-]*/gir;
+}
 
 around BUILDARGS => sub {
     my $orig  = shift;
