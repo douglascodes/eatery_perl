@@ -6,7 +6,7 @@ use Moose;
 sub _build_expression();
 
 has 'title'         => ( is => 'rw', isa => 'Str' );
-has 'fun_direction' => ( is => 'rw', isa => 'CodeRef' );
+has 'code' => ( is => 'rw', isa => 'CodeRef' );
 has 'expression'    => (
     is      => 'rw',
     lazy    => 1,

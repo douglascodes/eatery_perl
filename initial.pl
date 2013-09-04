@@ -10,7 +10,6 @@
   __PACKAGE__->load_components(qw/InflateColumn::DateTime/); # for example
   __PACKAGE__->table('cd');
 
-  # Elsewhere in your code:
   my $schema1 = Library::Schema->connect(
     "localhost",
     "perltest",

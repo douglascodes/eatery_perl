@@ -4,10 +4,12 @@ use warnings;
 use lib './';
 use Steakys::Schema;
 use Steakys::Options;
-sub login_screen();
+
+package Steakys::Main;
 sub create_user();
+sub log_in_user(\$);
+sub menu_choices_with_subs;
 sub leave();
-sub session();
 sub help();
 sub show_menu();
 sub list_choices;
@@ -24,70 +26,99 @@ my $schema = Steakys::Schema->connect(
     }
 );
 
-login_screen();
+main();
 
-# show_menu();
-
-sub login_screen() {
-
-    my $task_query = "Perform what Task?\nEx. create user\n";
-    our @main_options = (
+sub main {
+    my $current_user;
+    my $task_query
+        = "Perform what Task?\nEx. create user OR use option numbers.\n";
+    my @main_options = (
         Steakys::Options->new(
-            title         => 'Exit',
-            fun_direction => \&leave
+            title => 'Exit',
+            code  => \&leave
         ),
         Steakys::Options->new(
-            title         => 'Show Menu',
-            fun_direction => \&show_menu
+            title => 'Show Menu',
+            code  => \&show_menu
         )
     );
-    our @out_session_options= (
+
+    my @out_session_options = (
         Steakys::Options->new(
-            title         => 'Create User',
-            fun_direction => \&create_user
+            title => 'Create User',
+            code  => \&create_user
         ),
         Steakys::Options->new(
-            title         => 'Login',
-            fun_direction => \&session
+            title => 'Log in',
+            code  => sub { log_in_user($current_user) }
         )
     );
-    
-    our @in_session_options = (
-    	Steakys::Options->new(
-            title         => 'Create User',
-            fun_direction => \&create_user
+
+    my @in_session_options = (
+
+        # Steakys::Options->new(
+        #     title => 'Log Out',
+
+# # There is no real reason to do it this way. Just thought I'd give it a try.
+# # after all this is a learning exercise. Throws a warning.
+#       code => sub { last MENU_ }
+#   ),
+        Steakys::Options->new(
+            title => 'Order Food',
+            code  => \&order_food
         ),
         Steakys::Options->new(
-            title         => 'Order Food',
-            fun_direction => \&order_food
-        )
-        
-    	);
-    
-    # push( @out_session_options, ( 'Create User', 'Login' ) );
-    # push( @in_session_options,
-    #     ( 'Display Past Orders', 'Create New Order', 'Cancel Order' ) );
-# Tried here to use an array of Option objects. Where structure is:
-#  	Option->title = User facing title of the option.
-#  	Option->expression = Title formed into a regular expression for combination with numeric option
-# 	Option->fun_direction = Code ref to the activated sub routine.
-# 	This allows common options to be combined into Larger menus, and numbering of the options is dynamic and
-#   relates to the entry that can be made in the regex match.
-    list_choices( @main_options, @out_session_options );
+            title => 'Review my orders',
+            code  => \&display_past_orders
+        ),
+        Steakys::Options->new(
+            title => 'Log out',
+            code  => sub { undef $current_user }
+            )
 
-    print $task_query;
-    while ( my $input = <> ) {
-    	my $i = 1; 
-        chomp $input;
-        given ($input) {
-        	for my $opt (@main_options) {
-            	$opt->fun_direction->() when /${ \$opt->expression }|$i/i ;
-        		print $i++;
-        	}
-			default { print "Perhaps I stuttered...\n";
-	        list_choices(@main_options); }
+    );
+
+    while (1) {
+        while ( !( defined $current_user ) ) {
+            menu_choices_with_subs( $task_query, @main_options,
+                @out_session_options );
+        }
+
+        while ( ( defined $current_user ) ) {
+            menu_choices_with_subs( $task_query, @main_options,
+                @in_session_options );
         }
     }
+}
+
+sub menu_choices_with_subs {
+
+# Tried here to use an array of Option objects. Where structure is:
+#   Option->title = User facing title of the option.
+#   Option->expression = Title formed into a regular expression for combination with numeric option
+#   Option->code = Code ref to the activated sub routine.
+#   This allows common options to be combined into Larger menus, and numbering of the options is dynamic and
+#   relates to the entry that can be made in the regex match.
+    $_ = shift;
+    print $_;
+    list_choices(@_);
+
+    my $i     = 1;
+    my $input = <>;
+    chomp $input;
+    given ($input) {
+        for my $opt (@_) {
+            $opt->code->() when /${ \$opt->expression }|$i/i;
+            $i++;
+        }
+        default { print "Perhaps I stuttered...\n" }
+    }
+
+}
+
+sub log_in_user(\$) {
+    my $user = shift;
+    $$user = "Douglas";
 }
 
 sub create_user() {
@@ -97,10 +128,6 @@ sub create_user() {
 sub leave() {
     print "I am leaving\n";
     exit 0;
-}
-
-sub session() {
-    print "Welcome!\n";
 }
 
 sub display_past_orders() {
@@ -118,13 +145,11 @@ sub show_menu() {
 
 sub list_choices() {
     my $counter = 1;
-    for ( @_ ) { 
-        print "$counter.\t $_->{title}\n";
-    	$counter++; 
+    for (@_) {
+        print $counter++ . "\t $_->{title}\n";
     }
 }
 
-sub order_food(){
-	print "Yummy. Your order has been placed.\n"
+sub order_food() {
+    print "Yummy. Your order has been placed.\n";
 }
-1;
