@@ -15,7 +15,7 @@ sub show_menu();
 sub list_choices;
 
 our $dsn = "DBI:mysql:database=" . $ENV{'EATERY_DB'} . ";host=localhost";
-my $schema = Steakys::Schema->connect(
+our $schema = Steakys::Schema->connect(
     $dsn,
     $ENV{'EATERY_USER'},
     $ENV{'EATERY_PASS'},
@@ -61,7 +61,7 @@ sub main {
 
 # # There is no real reason to do it this way. Just thought I'd give it a try.
 # # after all this is a learning exercise. Throws a warning.
-#       code => sub { last MENU_ }
+#       code => sub { last MENU_ } # Where menu is a pointer to the loop beginning.
 #   ),
         Steakys::Options->new(
             title => 'Order Food',
@@ -84,7 +84,7 @@ sub main {
                 @out_session_options );
         }
 
-        while ( ( defined $current_user ) ) {
+        while ( defined $current_user ) {
             menu_choices_with_subs( $task_query, @main_options,
                 @in_session_options );
         }
@@ -111,14 +111,31 @@ sub menu_choices_with_subs {
             $opt->code->() when /${ \$opt->expression }|$i/i;
             $i++;
         }
-        default { print "Perhaps I stuttered...\n" }
+        default { print "Perhaps I stuttered...\n\n" }
     }
 
 }
 
 sub log_in_user(\$) {
     my $user = shift;
-    $$user = "Douglas";
+    my $user_check;
+
+    do {
+        say "Email?";
+        my $email = <>;
+        say "Phone number?";
+        my $phone = <>;
+        say "Last name?";
+        my $last = <>;
+        chomp $last; chomp $email; chomp $phone;
+        $user_check = $schema->resultset('Steakys::Schema::Result::Customer')->search({
+            lastname => $last,
+            phone => $phone,
+            email => $email
+          }, { key => 'uc_CustomerIS' });   
+    } while ( !(defined $user_check) && print "Sign in not valid.\nPlease try again.\n\n" ); 
+        $$user = $user_check->single();
+        say "Hello ". $$user->firstname();
 }
 
 sub create_user() {
@@ -146,7 +163,7 @@ sub show_menu() {
 sub list_choices() {
     my $counter = 1;
     for (@_) {
-        print $counter++ . "\t $_->{title}\n";
+        print "(". $counter++. ")" . "\t $_->{title}\n";
     }
 }
 
