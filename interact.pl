@@ -13,8 +13,10 @@ sub leave();
 sub help();
 sub show_menu();
 sub list_choices;
+sub CLomp($);
+sub prompt_for;
 
-our $dsn = "DBI:mysql:database=" . $ENV{'EATERY_DB'} . ";host=localhost";
+our $dsn    = "DBI:mysql:database=" . $ENV{'EATERY_DB'} . ";host=localhost";
 our $schema = Steakys::Schema->connect(
     $dsn,
     $ENV{'EATERY_USER'},
@@ -121,21 +123,34 @@ sub log_in_user(\$) {
     my $user_check;
 
     do {
-        say "Email?";
-        my $email = <>;
-        say "Phone number?";
-        my $phone = <>;
-        say "Last name?";
-        my $last = <>;
-        chomp $last; chomp $email; chomp $phone;
-        $user_check = $schema->resultset('Steakys::Schema::Result::Customer')->search({
-            lastname => $last,
-            phone => $phone,
-            email => $email
-          }, { key => 'uc_CustomerIS' });   
-    } while ( !(defined $user_check) && print "Sign in not valid.\nPlease try again.\n\n" ); 
-        $$user = $user_check->single();
-        say "Hello ". $$user->firstname();
+        my $email;
+        my $phone;
+        my $last;
+
+        prompt_for({
+            "Email"     => \$email,
+            "Phone"     => \$phone,
+            "Last Name" => \$last
+        });
+
+        $user_check
+            = $schema->resultset('Steakys::Schema::Result::Customer')
+            ->search(
+            {   lastname => $last,
+                phone    => $phone,
+                email    => $email
+            },
+            { key => 'uc_CustomerIS' }
+            );
+
+        } while ( !( defined $user_check )
+        && print "Sign in not valid.\nPlease try again.\n\n" );
+
+    if ( $$user = $user_check->single() ){
+        say "Hello " . $$user->firstname();        
+    } else {
+        say "Unrecognized user, please check your information."
+    }
 }
 
 sub create_user() {
@@ -163,10 +178,30 @@ sub show_menu() {
 sub list_choices() {
     my $counter = 1;
     for (@_) {
-        print "(". $counter++. ")" . "\t $_->{title}\n";
+        print "(" . $counter++ . ")" . "\t $_->{title}\n";
     }
 }
 
 sub order_food() {
     print "Yummy. Your order has been placed.\n";
+}
+
+sub prompt_for() {
+    my $needed; 
+    say "Those marked with * are optional.";
+    for ( keys $_[0] ) {
+        $needed = substr($_, 0, 1) eq '*';
+        do {
+            say "$_?";
+            } while ( !(
+                ( ${$_[0]{$_}} = CLomp( <> ) ) or # Gets input and continues if filled
+                ($needed)                       # or input is not 'needed'.
+                    ) )
+    }
+}
+
+sub CLomp($){
+    my $temp = shift;
+    chomp $temp;
+    $temp;
 }
