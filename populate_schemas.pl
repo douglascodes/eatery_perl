@@ -177,3 +177,34 @@ catch {
     warn "Uniqueness enforced on Items";
 };
 
+
+#populate Orders table
+	$dbh->do(
+    'INSERT INTO Orders(cust_id, order_date)
+		VALUES (1, "2013-08-26 16:49:16"),
+		(2, "2013-08-25 16:49:16"),
+		(3, "2013-08-24 16:49:16"),
+		(4, "2013-08-23 16:49:16"),
+		(5, "2013-08-22 16:49:16")'
+		);
+
+#populate Orderlines
+    $dbh->do(
+        "INSERT INTO OrderLines(order_id, item_id, qty)
+		VALUES (1, 2, 6),
+	 	(5, 2, 6),
+	 	(5, 6, 1),
+	 	(5, 23, 4),
+	 	(5, 9, 2),
+	 	(2, 4, 2),
+	 	(2, 33, 3),
+	 	(2, 10, 2),
+	 	(2, 1, 1),
+	 	(2, 2, 2),
+	 	(2, 6, 1),
+	 	(3, 3, 2),
+	 	(3, 2, 2),
+	 	(3, 1, 2),
+	 	(3, 4, 4)"
+		);
+

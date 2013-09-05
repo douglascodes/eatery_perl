@@ -5,9 +5,9 @@ use warnings;
 use Moose;
 sub _build_expression();
 
-has 'title'         => ( is => 'rw', isa => 'Str' );
-has 'code' => ( is => 'rw', isa => 'CodeRef' );
-has 'expression'    => (
+has 'title' => ( is => 'rw', isa => 'Str' );
+has 'code'  => ( is => 'rw', isa => 'CodeRef' );
+has 'expression' => (
     is      => 'rw',
     lazy    => 1,
     builder => '_build_expression',

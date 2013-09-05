@@ -10,6 +10,7 @@ sub create_user();
 sub log_in_user(\$);
 sub menu_choices_with_subs;
 sub leave();
+sub display_past_orders(\$);
 sub help();
 sub show_menu();
 sub list_choices;
@@ -71,7 +72,7 @@ sub main {
         ),
         Steakys::Options->new(
             title => 'Review my orders',
-            code  => \&display_past_orders
+            code  => sub { display_past_orders($current_user) }
         ),
         Steakys::Options->new(
             title => 'Log out',
@@ -127,11 +128,12 @@ sub log_in_user(\$) {
         my $phone;
         my $last;
 
-        prompt_for({
-            "Email"     => \$email,
-            "Phone"     => \$phone,
-            "Last Name" => \$last
-        });
+        prompt_for(
+            {   "Email"     => \$email,
+                "Phone"     => \$phone,
+                "Last Name" => \$last
+            }
+        );
 
         $user_check
             = $schema->resultset('Steakys::Schema::Result::Customer')
@@ -146,10 +148,11 @@ sub log_in_user(\$) {
         } while ( !( defined $user_check )
         && print "Sign in not valid.\nPlease try again.\n\n" );
 
-    if ( $$user = $user_check->single() ){
-        say "Hello " . $$user->firstname();        
-    } else {
-        say "Unrecognized user, please check your information."
+    if ( $$user = $user_check->single() ) {
+        say "Hello " . $$user->firstname();
+    }
+    else {
+        say "Unrecognized user, please check your information.";
     }
 }
 
@@ -162,8 +165,22 @@ sub leave() {
     exit 0;
 }
 
-sub display_past_orders() {
-    print "Here's what you've been eating.\n";
+sub display_past_orders(\$) {
+    my $user = shift;
+    my $q1 = {cust_id => $$user->id};
+    my $past_orders
+        = $schema->resultset("Steakys::Schema::Result::Order")->search($q1);
+    while ( my $order = $past_orders->next ) {
+        my $q2 = { order_id => ${order}->id};
+        say "Order from: ". $order->order_date;
+        my $single_order =
+            $schema->resultset("Steakys::Schema::Result::OrderLine")->search($q2);
+        while ( my $order_line = $single_order->next){
+            print ${order_line}->item_id . "\t\t" . ${order_line}->qty . "\n";
+        }
+    
+    }
+
 }
 
 sub show_menu() {
@@ -187,20 +204,22 @@ sub order_food() {
 }
 
 sub prompt_for() {
-    my $needed; 
+    my $needed;
     say "Those marked with * are optional.";
     for ( keys $_[0] ) {
-        $needed = substr($_, 0, 1) eq '*';
+        $needed = substr( $_, 0, 1 ) eq '*';
         do {
             say "$_?";
-            } while ( !(
-                ( ${$_[0]{$_}} = CLomp( <> ) ) or # Gets input and continues if filled
-                ($needed)                       # or input is not 'needed'.
-                    ) )
+            } while (
+            !(  ( ${ $_[0]{$_} } = CLomp(<>) )
+                or           # Gets input and continues if filled
+                ($needed)    # or input is not 'needed'.
+            )
+            );
     }
 }
 
-sub CLomp($){
+sub CLomp($) {
     my $temp = shift;
     chomp $temp;
     $temp;
