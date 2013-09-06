@@ -128,12 +128,16 @@ sub log_in_user(\$) {
         my $phone;
         my $last;
 
-        prompt_for(
-            {   "Email"     => \$email,
-                "Phone"     => \$phone,
-                "Last Name" => \$last
-            }
-        );
+        # prompt_for(
+        #     {   "Email"     => \$email,
+        #         "Phone"     => \$phone,
+        #         "Last Name" => \$last
+        #     }
+        # );
+        
+        $email = 'glenn@hotmail.com';
+        $phone = "6102587412";
+        $last = "St. Coeur";
 
         $user_check
             = $schema->resultset('Steakys::Schema::Result::Customer')
@@ -168,18 +172,38 @@ sub leave() {
 sub display_past_orders(\$) {
     my $user = shift;
     my $q1 = {cust_id => $$user->id};
-    my $past_orders
-        = $schema->resultset("Steakys::Schema::Result::Order")->search($q1);
-    while ( my $order = $past_orders->next ) {
-        my $q2 = { order_id => ${order}->id};
-        say "Order from: ". $order->order_date;
-        my $single_order =
-            $schema->resultset("Steakys::Schema::Result::OrderLine")->search($q2);
-        while ( my $order_line = $single_order->next){
-            print ${order_line}->item_id . "\t\t" . ${order_line}->qty . "\n";
+    my $past_orders = $$user->orders();
+
+    while ( my $order = $past_orders->next() ) {
+        say $order->order_date();
+        my $order_total = 0;
+        my $order_lines = $order->order_lines();
+        while ( my $line = $order_lines->next() ) {
+
+            my $item = $line->item();
+            my $price = $item->price();
+            my $ext_price = $price * $line->qty;
+            $order_total += $ext_price; 
+
+            say $item->item_name() . "\t". $price ."\t". $ext_price;
         }
-    
+        say "Total: \t". $order_total;
     }
+        # = $schema->resultset("Steakys::Schema::Result::Order")->search($q1);
+
+
+    # my $past_orders
+    #     = $schema->resultset("Steakys::Schema::Result::Order")->search($q1);
+    # while ( my $order = $past_orders->next ) {
+    #     my $q2 = { order_id => ${order}->id};
+    #     say "Order from: ". $order->order_date;
+    #     my $single_order =
+    #         $schema->resultset("Steakys::Schema::Result::OrderLine")->search($q2);
+    #     while ( my $order_line = $single_order->next){
+    #         print ${order_line}->item_id . "\t\t" . ${order_line}->qty . "\n";
+    #     }
+    
+    # }
 
 }
 
