@@ -6,7 +6,7 @@ use Steakys::Schema;
 use Steakys::Options;
 
 package Steakys::Main;
-sub create_user();
+sub create_user(\$);
 sub log_in_user(\$);
 sub menu_choices_with_subs;
 sub leave();
@@ -49,7 +49,7 @@ sub main {
     my @out_session_options = (
         Steakys::Options->new(
             title => 'Create User',
-            code  => \&create_user
+            code  => sub { create_user($current_user) }
         ),
         Steakys::Options->new(
             title => 'Log in',
@@ -109,6 +109,7 @@ sub menu_choices_with_subs {
     my $i     = 1;
     my $input = <>;
     chomp $input;
+
     given ($input) {
         for my $opt (@_) {
             $opt->code->() when /${ \$opt->expression }|$i/i;
@@ -128,16 +129,18 @@ sub log_in_user(\$) {
         my $phone;
         my $last;
 
-        # prompt_for(
-        #     {   "Email"     => \$email,
-        #         "Phone"     => \$phone,
-        #         "Last Name" => \$last
-        #     }
-        # );
-        
-        $email = 'glenn@hotmail.com';
-        $phone = "6102587412";
-        $last = "St. Coeur";
+        # uncomment the following for normal use
+        prompt_for(
+            {   "Email"     => \$email,
+                "Phone"     => \$phone,
+                "Last Name" => \$last
+            }
+        );
+
+        # ## Just a temporary way to get logged in for testing.
+        # $email = 'glenn@hotmail.com';
+        # $phone = "6102587412";
+        # $last  = "St. Coeur";
 
         $user_check
             = $schema->resultset('Steakys::Schema::Result::Customer')
@@ -160,8 +163,42 @@ sub log_in_user(\$) {
     }
 }
 
-sub create_user() {
-    print "User created\n";
+sub create_user(\$) {
+    my $user = shift;
+    my $email;
+    my $phone;
+    my $last;
+    my $first;
+    my $user_check;
+    do {
+        prompt_for(
+            {   "Email"       => \$email,
+                "Phone"       => \$phone,
+                "*First Name" => \$first,
+                "Last Name"   => \$last
+            }
+        );
+
+        $user_check
+            = $schema->resultset('Steakys::Schema::Result::Customer')
+            ->find_or_new(
+            {   lastname  => $last,
+                phone     => $phone,
+                email     => $email,
+                firstname => $first
+            },
+            { key => 'uc_CustomerIS' }
+            );
+
+        } until (
+        !(  $user_check->in_storage()
+            && print "User exists, please try again.\n"
+        )
+        );
+
+    $user_check->insert();
+    $$user = $user_check;
+    say "Logged in as " . $$user->firstname . " " . $$user->lastname;
 }
 
 sub leave() {
@@ -170,8 +207,7 @@ sub leave() {
 }
 
 sub display_past_orders(\$) {
-    my $user = shift;
-    my $q1 = {cust_id => $$user->id};
+    my $user        = shift;
     my $past_orders = $$user->orders();
 
     while ( my $order = $past_orders->next() ) {
@@ -180,30 +216,18 @@ sub display_past_orders(\$) {
         my $order_lines = $order->order_lines();
         while ( my $line = $order_lines->next() ) {
 
-            my $item = $line->item();
-            my $price = $item->price();
-            my $ext_price = $price * $line->qty;
-            $order_total += $ext_price; 
+            my $item      = $line->item();
+            my $price     = $item->price();
+            my $ext_price = $price * $line->qty();
+            $order_total += $ext_price;
 
-            say $item->item_name() . "\t". $price ."\t". $ext_price;
+            say $item->item_name() . "\t"
+                . $price . " x"
+                . $line->qty() . "\t"
+                . $ext_price;
         }
-        say "Total: \t". $order_total;
+        say "Total: \t" . $order_total;
     }
-        # = $schema->resultset("Steakys::Schema::Result::Order")->search($q1);
-
-
-    # my $past_orders
-    #     = $schema->resultset("Steakys::Schema::Result::Order")->search($q1);
-    # while ( my $order = $past_orders->next ) {
-    #     my $q2 = { order_id => ${order}->id};
-    #     say "Order from: ". $order->order_date;
-    #     my $single_order =
-    #         $schema->resultset("Steakys::Schema::Result::OrderLine")->search($q2);
-    #     while ( my $order_line = $single_order->next){
-    #         print ${order_line}->item_id . "\t\t" . ${order_line}->qty . "\n";
-    #     }
-    
-    # }
 
 }
 
@@ -211,7 +235,7 @@ sub show_menu() {
     my $fullmenu
         = $schema->resultset("Steakys::Schema::Result::Item")->search;
     while ( my $menu_item = $fullmenu->next ) {
-        print ${menu_item}->item_name . "\t\t" . ${menu_item}->price . "\n";
+        print $menu_item->item_name . "\t\t" . $menu_item->price . "\n";
     }
     print "I recommend you eat one of these.\n";
 }
