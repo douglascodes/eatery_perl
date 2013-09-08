@@ -47,6 +47,7 @@ $dbh->do(
 # 4th - Bar/Beverage
 # Cold/Hot/Bar prep would be 1011 = 11
 # Bar only would be 1000 = 8
+
 $dbh->do(
     "Create TABLE if not exists Items (
 	sku INT PRIMARY KEY auto_increment,
