@@ -130,17 +130,17 @@ sub log_in_user(\$) {
         my $last;
 
         # uncomment the following for normal use
-        prompt_for(
-            {   "Email"     => \$email,
-                "Phone"     => \$phone,
-                "Last Name" => \$last
-            }
-        );
+        # prompt_for(
+        #     {   "Email"     => \$email,
+        #         "Phone"     => \$phone,
+        #         "Last Name" => \$last
+        #     }
+        # );
 
-        # ## Just a temporary way to get logged in for testing.
-        # $email = 'glenn@hotmail.com';
-        # $phone = "6102587412";
-        # $last  = "St. Coeur";
+        ## Just a temporary way to get logged in for testing.
+        $email = 'glenn@hotmail.com';
+        $phone = "6102587412";
+        $last  = "St. Coeur";
 
         $user_check
             = $schema->resultset('Steakys::Schema::Result::Customer')
